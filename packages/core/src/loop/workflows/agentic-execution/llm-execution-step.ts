@@ -5,7 +5,7 @@ import { APICallError, generateId } from '@internal/ai-sdk-v5';
 import type { CallSettings, StepResult, ToolChoice, ToolSet } from '@internal/ai-sdk-v5';
 import type { StructuredOutputOptions } from '../../../agent';
 import type { MessageList } from '../../../agent/message-list';
-import { attributePromptRegions } from '../../../agent/message-list/region-attribution';
+import { attributePromptRegions, didPromptPrefixChange } from '../../../agent/message-list/region-attribution';
 import { TripWire } from '../../../agent/trip-wire';
 import { isSupportedLanguageModel, supportedLanguageModelSpecifications } from '../../../agent/utils';
 import { getErrorFromUnknown } from '../../../error/utils.js';
@@ -1534,6 +1534,7 @@ export function createLLMExecutionStep<TOOLS extends ToolSet = ToolSet, OUTPUT =
             stepSpanForRegions.update({
               attributes: {
                 promptRegions: attributePromptRegions({ messageList, inputMessages }),
+                promptPrefixChangedFromPreviousStep: didPromptPrefixChange(messageList, inputMessages),
               },
             });
           } catch (error) {
