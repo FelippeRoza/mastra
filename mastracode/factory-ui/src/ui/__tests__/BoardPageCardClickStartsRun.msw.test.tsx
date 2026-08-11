@@ -32,7 +32,7 @@ const issueWorkItem = {
   },
   parentWorkItemId: null,
   title: 'Fix login bug',
-  stages: ['triage'],
+  stages: ['intake'],
   stageHistory: [],
   sessions: {},
   metadata: { number: 7 },
@@ -51,6 +51,7 @@ const linearWorkItem = {
     url: 'https://linear.app/acme/issue/ENG-42/fix-intake-sync',
   },
   title: 'ENG-42: Fix intake sync',
+  stages: ['triage'],
   metadata: { identifier: 'ENG-42' },
 };
 
@@ -139,8 +140,9 @@ describe('Board card click starts the default run', () => {
 
     await waitFor(() => expect(startRequests).toHaveLength(1));
     expect(startRequests[0]).toMatchObject({
+      destinationStage: 'triage',
       invocation: { type: 'skill', skillName: 'factory-triage' },
-      workItem: { id: 'item-1', role: 'plan' },
+      workItem: { id: 'item-1', role: 'triage' },
     });
   });
 
@@ -153,7 +155,7 @@ describe('Board card click starts the default run', () => {
 
     await waitFor(() => expect(startRequests).toHaveLength(1));
     expect(startRequests[0]).toMatchObject({
-      destinationStage: 'planning',
+      destinationStage: 'triage',
       invocation: {
         type: 'skill',
         skillName: 'factory-triage',
@@ -162,7 +164,7 @@ describe('Board card click starts the default run', () => {
             `Start by fetching the issue's full details (description and comments) with the linear_get_issue tool.`,
         ),
       },
-      workItem: { id: 'linear-item-1', role: 'plan' },
+      workItem: { id: 'linear-item-1', role: 'triage' },
     });
   });
 
@@ -188,8 +190,9 @@ describe('Board card click starts the default run', () => {
 
     await waitFor(() => expect(startRequests).toHaveLength(1));
     expect(startRequests[0]).toMatchObject({
+      destinationStage: 'triage',
       invocation: { type: 'skill', skillName: 'factory-triage' },
-      workItem: { role: 'plan' },
+      workItem: { role: 'triage' },
     });
   });
 });
