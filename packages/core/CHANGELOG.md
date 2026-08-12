@@ -1,5 +1,13 @@
 # @mastra/core
 
+## 1.58.1-alpha.0
+
+### Patch Changes
+
+- Update provider registry and model documentation with latest models and providers ([`088e41e`](https://github.com/mastra-ai/mastra/commit/088e41e434ed05f2c674b254f1034ec46a57a7be))
+
+- Fixed CoreToolBuilder dropping the `~standard.jsonSchema` adapter when injecting background/resume fields onto Zod v4 tool input schemas. Invalid tool calls now return structured validation errors instead of crashing during JSON Schema conversion. ([#21187](https://github.com/mastra-ai/mastra/pull/21187))
+
 ## 1.58.0
 
 ### Minor Changes
