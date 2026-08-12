@@ -38,6 +38,7 @@ import type { InMemoryDB } from '../inmemory-db';
 import { MemoryStorage } from './base';
 
 export class InMemoryMemory extends MemoryStorage {
+  override readonly supportsPartialThreadUpdate: boolean = true;
   readonly supportsObservationalMemory = true;
   private db: InMemoryDB;
 
@@ -77,8 +78,8 @@ export class InMemoryMemory extends MemoryStorage {
     metadata,
   }: {
     id: string;
-    title: string;
-    metadata: Record<string, unknown>;
+    title?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<StorageThreadType> {
     const thread = this.db.threads.get(id);
 
@@ -87,7 +88,7 @@ export class InMemoryMemory extends MemoryStorage {
     }
 
     if (thread) {
-      thread.title = title;
+      if (title !== undefined) thread.title = title;
       thread.metadata = { ...thread.metadata, ...metadata };
       thread.updatedAt = new Date();
     }

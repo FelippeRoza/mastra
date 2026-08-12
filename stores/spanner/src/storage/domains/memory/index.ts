@@ -73,6 +73,7 @@ function buildSpannerMessageMetadataFilter(metadataFilter: StorageMetadataFilter
  * (the durable state surface used by `@mastra/memory`).
  */
 export class MemorySpanner extends MemoryStorage {
+  override readonly supportsPartialThreadUpdate = true;
   private database: Database;
   private db: SpannerDB;
   private readonly skipDefaultIndexes?: boolean;
@@ -348,8 +349,8 @@ export class MemorySpanner extends MemoryStorage {
     metadata,
   }: {
     id: string;
-    title: string;
-    metadata: Record<string, unknown>;
+    title?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<StorageThreadType> {
     const tableThreads = quoteIdent(TABLE_THREADS, 'table name');
     const now = new Date();
@@ -374,7 +375,7 @@ export class MemorySpanner extends MemoryStorage {
                 domain: ErrorDomain.STORAGE,
                 category: ErrorCategory.USER,
                 text: `Thread ${id} not found`,
-                details: { threadId: id, title },
+                details: { threadId: id, title: title ?? null },
               });
             }
             existingThread = this.formatThreadRow(row);
@@ -383,7 +384,7 @@ export class MemorySpanner extends MemoryStorage {
               tableName: TABLE_THREADS,
               keys: { id },
               data: {
-                title,
+                title: title ?? existingThread.title,
                 metadata: merged,
                 updatedAt: now,
               },
@@ -411,7 +412,7 @@ export class MemorySpanner extends MemoryStorage {
           id: createStorageErrorId('SPANNER', 'UPDATE_THREAD', 'FAILED'),
           domain: ErrorDomain.STORAGE,
           category: ErrorCategory.THIRD_PARTY,
-          details: { threadId: id, title },
+          details: { threadId: id, title: title ?? null },
         },
         error,
       );

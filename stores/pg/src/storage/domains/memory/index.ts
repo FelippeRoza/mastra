@@ -164,6 +164,7 @@ function dedupeMessagesForSave(messages: MastraDBMessage[]): MastraDBMessage[] {
 }
 
 export class MemoryPG extends MemoryStorage {
+  override readonly supportsPartialThreadUpdate = true;
   readonly supportsObservationalMemory = true;
 
   /**
@@ -708,8 +709,8 @@ export class MemoryPG extends MemoryStorage {
     metadata,
   }: {
     id: string;
-    title: string;
-    metadata: Record<string, unknown>;
+    title?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<StorageThreadType> {
     const threadTableName = getTableName({ indexName: TABLE_THREADS, schemaName: getSchemaName(this.#schema) });
     const existingThread = await this.getThreadById({ threadId: id });
@@ -721,7 +722,7 @@ export class MemoryPG extends MemoryStorage {
         text: `Thread ${id} not found`,
         details: {
           threadId: id,
-          title,
+          title: title ?? null,
         },
       });
     }
@@ -737,14 +738,14 @@ export class MemoryPG extends MemoryStorage {
       const thread = await this.#db.client.one<StorageThreadType & { createdAtZ: Date; updatedAtZ: Date }>(
         `UPDATE ${threadTableName}
                     SET
-                        title = $1,
+                        title = COALESCE($1, title),
                         metadata = $2,
                         "updatedAt" = $3,
                         "updatedAtZ" = $4
                     WHERE id = $5
                     RETURNING *
                 `,
-        [title, mergedMetadata, nowStr, nowStr, id],
+        [title ?? null, mergedMetadata, nowStr, nowStr, id],
       );
 
       return {
@@ -763,7 +764,7 @@ export class MemoryPG extends MemoryStorage {
           category: ErrorCategory.THIRD_PARTY,
           details: {
             threadId: id,
-            title,
+            title: title ?? null,
           },
         },
         error,

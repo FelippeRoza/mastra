@@ -2,10 +2,10 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import type { MastraDBMessage } from '@mastra/core/agent';
 import type { MastraToolInvocation } from '@mastra/core/agent/message-list';
-import imageSize from 'image-size';
 import { estimateTokenCount } from 'tokenx';
 
-import { formatToolResultForObserver, resolveToolResultValue } from './tool-result-helpers';
+import { measureImageBuffer } from './measure-image-buffer';
+import { resolveToolResultValue, serializeToolResultForTokenCounting } from './tool-result-helpers';
 
 type TokenEstimateCacheEntry = {
   v: number;
@@ -562,25 +562,25 @@ function resolveImageDimensions(part: CacheablePart): { width?: number; height?:
     return { width, height };
   }
 
-  try {
-    const measured = imageSize(buffer);
-    const measuredWidth = getFiniteNumber(measured.width);
-    const measuredHeight = getFiniteNumber(measured.height);
-
-    if (!measuredWidth || !measuredHeight) {
-      return { width, height };
-    }
-
-    const resolved = {
-      width: width ?? measuredWidth,
-      height: height ?? measuredHeight,
-    };
-
-    persistImageDimensions(part, resolved as { width: number; height: number });
-    return resolved;
-  } catch {
+  const measured = measureImageBuffer(buffer);
+  if (!measured) {
     return { width, height };
   }
+
+  const measuredWidth = getFiniteNumber(measured.width);
+  const measuredHeight = getFiniteNumber(measured.height);
+
+  if (!measuredWidth || !measuredHeight) {
+    return { width, height };
+  }
+
+  const resolved = {
+    width: width ?? measuredWidth,
+    height: height ?? measuredHeight,
+  };
+
+  persistImageDimensions(part, resolved as { width: number; height: number });
+  return resolved;
 }
 
 function getBase64Size(base64: string): number {
@@ -1324,7 +1324,7 @@ export class TokenCounter {
     let tokens = 0;
     const cacheParts: unknown[] = [];
     const countJsonContentPart = (contentPart: Record<string, unknown>) => {
-      const formatted = formatToolResultForObserver(contentPart);
+      const formatted = serializeToolResultForTokenCounting(contentPart);
       tokens += this.countString(formatted);
       cacheParts.push({ type: 'json', valueHash: createHash('sha256').update(formatted).digest('hex') });
     };
@@ -1781,7 +1781,7 @@ export class TokenCounter {
           if (contentTokens !== undefined) {
             tokens += contentTokens;
           } else {
-            const formattedResult = formatToolResultForObserver(resultForCounting);
+            const formattedResult = serializeToolResultForTokenCounting(resultForCounting);
             tokens += this.readOrPersistPartEstimate(
               part,
               usingStoredModelOutput ? 'tool-result-model-output-json' : 'tool-result-json',
